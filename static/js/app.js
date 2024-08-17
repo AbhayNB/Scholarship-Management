@@ -4,6 +4,7 @@ const store = Vuex.createStore({
     return {
       logged: !!localStorage.getItem('access_token'),
       role: localStorage.getItem('role'),
+      email: localStorage.getItem('email'),
       username: localStorage.getItem('username'),
       access_token: localStorage.getItem('access_token'),
       uid: localStorage.getItem('id'),
@@ -1193,6 +1194,7 @@ const RegisterPage = {
   data() {
     return {
       username: '',
+      email:'',
       password: '',
       role: 'student', // Default role
       departmentId: '', // To store selected department ID
@@ -1217,6 +1219,7 @@ const RegisterPage = {
           body: JSON.stringify({
             username: this.username,
             password: this.password,
+            email:this.email,
             role: this.role,
             department_id: this.departmentId
           })
@@ -1255,6 +1258,10 @@ const RegisterPage = {
                 required
               />
             </div>
+              <div class="mb-3">
+    <label for="exampleInputEmail1" class="form-label">Email address</label>
+    <input type="email" class="form-control" id="exampleInputEmail1" v-model="email" aria-describedby="emailHelp">
+  </div>
             <div class="form-group">
               <label for="password">Password</label>
               <input
@@ -1335,6 +1342,7 @@ const AuthPage ={
             localStorage.setItem('role', data.roles);
             localStorage.setItem('department_id', data.department_id);
             localStorage.setItem('department_name', data.department_name);
+            localStorage.setItem('email', data.email);
 
             this.$store.commit('setLogged', true);
             window.location.href = '/'; // Redirect to a dashboard or other page

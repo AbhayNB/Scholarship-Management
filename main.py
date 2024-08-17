@@ -52,6 +52,7 @@ def create_tables():
 def register():
     username = request.json.get('username')
     password = request.json.get('password')
+    email= request.json.get('email')
     role_name = request.json.get('role', 'user')  # Default role is 'user'
     department_id = request.json.get('department_id')  # Optional department_id
 
@@ -69,7 +70,7 @@ def register():
     else:
         department = None
 
-    new_user = User(username=username, department_id=department_id)
+    new_user = User(username=username, department_id=department_id,email=email)
     new_user.set_password(password)
     new_user.roles.append(user_role)
     db.session.add(new_user)
