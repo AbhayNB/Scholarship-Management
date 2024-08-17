@@ -1001,6 +1001,7 @@ const AdminRegisterPage = {
   data() {
     return {
       username: '',
+      email:'',
       password: '',
       role: 'student', // Default role
       departmentId: '', // To store selected department ID
@@ -1025,6 +1026,7 @@ const AdminRegisterPage = {
           body: JSON.stringify({
             username: this.username,
             password: this.password,
+            email:this.email,
             role: this.role,
             department_id: this.departmentId
           })
@@ -1063,6 +1065,10 @@ const AdminRegisterPage = {
                 required
               />
             </div>
+                       <div class="mb-3">
+    <label for="exampleInputEmail1" class="form-label">Email address</label>
+    <input type="email" class="form-control" id="exampleInputEmail1" v-model="email" aria-describedby="emailHelp">
+  </div>
             <div class="form-group">
               <label for="password">Password</label>
               <input
