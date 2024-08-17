@@ -246,8 +246,6 @@ def apply_scholarship():
                 print('Confirmation email sent successfully!')
         except Exception as e:
             print(f'Failed to send email: {e}')
-        finally:
-            server.quit()
         return jsonify({"message": "Application submitted successfully!", "application_id": application.id}), 201
 
     except Exception as e:
@@ -346,14 +344,17 @@ def update_application(id):
     application = ScholarshipApplication.query.get_or_404(id)
     
     data = request.json
-
+    ms=''
     print(data)
     if 'status' in data:
         application.status = data['status']
+        ms+=f"Approval status updated to :{data['status']}\n"
     if 'recommend' in data:
         application.recommend = data['recommend']
+        ms+=f"Recommend status updated to :{data['recommend']}\n"
     if 'feedback' in data:
         application.feedback = data['feedback']
+        ms+=f"Feedback updated to :{data['feedback']}\n"
 
     # Handle file updates
     if 'income_certificate' in request.files:
@@ -376,7 +377,27 @@ def update_application(id):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             application.sop = filename
+        user = User.query.get(application.student_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
 
+        msg = MIMEMultipart()
+        msg['From'] = from_email
+        msg['To'] = user.email
+        msg['Subject'] = 'Scholarship Application Status Update'
+
+        body = f"Dear {user.username},\n\nYour scholarship application status has been Updated. {ms}.\n\nThank you!"
+        msg.attach(MIMEText(body, 'plain'))
+
+        # Send email
+        try:
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()  # Secure the connection
+                server.login(smtp_user, smtp_password)
+                server.sendmail(from_email, user.email, msg.as_string())
+                print('Confirmation email sent successfully!')
+        except Exception as e:
+            print(f'Failed to send email: {e}')
     db.session.commit()
     return jsonify({'message': 'Application updated successfully'}), 200
 
