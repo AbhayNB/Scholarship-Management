@@ -19,10 +19,12 @@
       <navbar
       name="Imprints"
       :links="[
-        { name: 'Scholorship application', path: '/', isRouterLink: true, showWhen: 'both' },
+        { name: 'Scholorship application', path: '/', isRouterLink: true, showWhen: 'loggedIn' },
         { name: 'Login', path: '/login', isRouterLink: true, showWhen: 'loggedOut' },
         { name: 'Logout', action: logout, showWhen: 'loggedIn' },
-         { name: 'Register', path:'/register',isRouterLink: true, showWhen: 'loggedOut'}
+         { name: 'Register', path:'/register',isRouterLink: true, showWhen: 'loggedOut'},
+         { name: 'Go to Admin Page', path:'/admin_page#/admin_login',isRouterLink: false, showWhen: 'loggedOut'}
+
       ]"
     ></navbar>
 

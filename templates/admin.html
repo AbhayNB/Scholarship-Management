@@ -19,8 +19,11 @@
       <navbar
       name="Imprints"
       :links="[
-        { name: 'Home', path: '/', isRouterLink: true, showWhen: 'both' },
-        { name: 'Login', path: '/login', isRouterLink: true, showWhen: 'loggedOut' },
+        { name: 'Applications', path: '/', isRouterLink: true, showWhen: 'loggedIn' },
+        { name: 'HOD Page', path: '/', isRouterLink: true, showWhen: 'loggedIn' },
+        { name: 'Finanace Page', path: '/', isRouterLink: true, showWhen: 'loggedIn' },
+
+        { name: 'Login', path: '/admin_login', isRouterLink: true, showWhen: 'loggedOut' },
         { name: 'Logout', action: logout, showWhen: 'loggedIn' },
          { name: 'Register', path:'/register',isRouterLink: true, showWhen: 'loggedOut'}
       ]"
