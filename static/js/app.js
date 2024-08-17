@@ -31,7 +31,7 @@ const store = Vuex.createStore({
   actions: {
     async fetchDepartments({ commit }) {
       try {
-        const response = await fetch('http://127.0.0.1:5000/departments');
+        const response = await fetch('https://scholarship-management-production.up.railway.app/departments');
         if (!response.ok) {
           throw new Error('Failed to fetch departments');
         }
@@ -43,7 +43,7 @@ const store = Vuex.createStore({
     },
     async fetchFinances({ commit }) {
       try {
-        const response = await fetch('http://127.0.0.1:5000/finances');
+        const response = await fetch('https://scholarship-management-production.up.railway.app/finances');
         if (!response.ok) {
           throw new Error('Failed to fetch finances');
         }
@@ -55,7 +55,7 @@ const store = Vuex.createStore({
     },
     async fetchApplications({ commit }) {
       try {
-        const response = await fetch('http://127.0.0.1:5000/applications');
+        const response = await fetch('https://scholarship-management-production.up.railway.app/applications');
         if (!response.ok) {
           throw new Error('Failed to fetch applications');
         }
@@ -352,12 +352,563 @@ const HODReview = {
   `
 };
 
-const AdminHome={
-  template:`
-  <h1>Wellcome To Admin Page</h1>
-  `
-}
+const AdminHome = {
+  computed: {
+    userDetails() {
+      return {
+        username: this.$store.state.username,
+        role: this.$store.state.role,
+        departmentId: this.$store.state.udid,
+        departmentName: this.$store.state.udept
+      };
+    },
+    isLoggedIn() {
+      return this.$store.getters.isLoggedIn;
+    }
+  },
+  methods: {
+    getGreeting() {
+      const hour = new Date().getHours();
+      if (hour < 12) return "Good morning";
+      if (hour < 18) return "Good afternoon";
+      return "Good evening";
+    }
+  },
+  template: `
+    <div class="container mt-5">
+      <h1>Welcome to Admin Page</h1>
+      
+      <div v-if="isLoggedIn">
+        <div class="card mt-4">
+          <div class="card-header">
+            <h3>{{ getGreeting() }}, {{ userDetails.username }}!</h3>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">Your Details</h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item"><strong>Username:</strong> {{ userDetails.username }}</li>
+              <li class="list-group-item"><strong>Role:</strong> {{ userDetails.role }}</li>
+              <li class="list-group-item" v-if="userDetails.departmentId">
+                <strong>Department ID:</strong> {{ userDetails.departmentId }}
+              </li>
+              <li class="list-group-item" v-if="userDetails.departmentName">
+                <strong>Department Name:</strong> {{ userDetails.departmentName }}
+              </li>
+            </ul>
+          </div>
+        </div>
 
+        <div class="mt-4">
+          <h4>Quick Links For You</h4>
+          <div class="list-group">
+            <router-link to="/finance" class="list-group-item list-group-item-action" v-if="userDetails.role === 'finance'">
+              Finance Management
+            </router-link>
+            <router-link to="/hodreview" class="list-group-item list-group-item-action" v-if="userDetails.role === 'hod'">
+              HOD Review
+            </router-link>
+            <router-link to="/principalreview" class="list-group-item list-group-item-action" v-if="userDetails.role === 'principal'">
+              Principal Review
+            </router-link>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="alert alert-warning mt-4">
+        You are not logged in. Please log in to view your details.
+      </div>
+    </div>
+  `
+};
+const FinanceManagement = {
+  data() {
+    return {
+      finances: [],
+      editingFinance: null,
+      newFinance: {
+        department_id: '',
+        budget: ''
+      },
+      departments: [],
+      errorMessage: '',
+      successMessage: ''
+    };
+  },
+  computed: {
+    isFinanceRole() {
+      return this.$store.getters.role === 'finance';
+    }
+  },
+  methods: {
+    async fetchFinances() {
+      try {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/finances');
+        if (!response.ok) {
+          throw new Error('Failed to fetch finances');
+        }
+        this.finances = await response.json();
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    },
+    async fetchDepartments() {
+      try {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/departments');
+        if (!response.ok) {
+          throw new Error('Failed to fetch departments');
+        }
+        this.departments = await response.json();
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    },
+    startEditing(finance) {
+      this.editingFinance = { ...finance };
+    },
+    cancelEditing() {
+      this.editingFinance = null;
+    },
+    async saveFinance() {
+      try {
+        const response = await fetch(`https://scholarship-management-production.up.railway.app/finances/${this.editingFinance.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            budget: this.editingFinance.budget
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update finance');
+        }
+
+        this.successMessage = 'Finance updated successfully';
+        this.fetchFinances();
+        this.editingFinance = null;
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    },
+    async addNewFinance() {
+      try {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/finances', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.newFinance),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add new finance');
+        }
+
+        this.successMessage = 'New finance added successfully';
+        this.fetchFinances();
+        this.newFinance = { department_id: '', budget: '' };
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    },
+    async deleteFinance(financeId) {
+      if (!confirm('Are you sure you want to delete this finance record?')) {
+        return;
+      }
+      try {
+        const response = await fetch(`https://scholarship-management-production.up.railway.app/finances/${financeId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete finance');
+        }
+
+        this.successMessage = 'Finance deleted successfully';
+        this.fetchFinances();
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    }
+  },
+  mounted() {
+    if (this.isFinanceRole) {
+      this.fetchFinances();
+      this.fetchDepartments();
+    }
+  },
+  template: `
+    <div class="container mt-5">
+      <h2>Finance Management</h2>
+      
+      <div v-if="!isFinanceRole" class="alert alert-warning">
+        You do not have permission to view this page.
+      </div>
+
+      <div v-else>
+        <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+        <div v-if="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+        <h3>Current Finances</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Department</th>
+              <th>Budget</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="finance in finances" :key="finance.id">
+              <td>{{ finance.id }}</td>
+              <td>{{ departments.find(d => d.id === finance.department_id)?.name || 'Unknown' }}</td>
+              <td>
+                <span v-if="editingFinance?.id !== finance.id">{{ finance.budget }}</span>
+                <input v-else v-model.number="editingFinance.budget" type="number" class="form-control">
+              </td>
+              <td>
+                <button v-if="editingFinance?.id !== finance.id" @click="startEditing(finance)" class="btn btn-sm btn-primary">Edit</button>
+                <template v-else>
+                  <button @click="saveFinance" class="btn btn-sm btn-success">Save</button>
+                  <button @click="cancelEditing" class="btn btn-sm btn-secondary">Cancel</button>
+                </template>
+                <button @click="deleteFinance(finance.id)" class="btn btn-sm btn-danger ml-2">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Add New Finance</h3>
+        <form @submit.prevent="addNewFinance" class="mb-4">
+          <div class="form-group">
+            <label>Department</label>
+            <select v-model="newFinance.department_id" class="form-control" required>
+              <option value="">Select Department</option>
+              <option v-for="dept in departments" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Budget</label>
+            <input v-model.number="newFinance.budget" type="number" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Finance</button>
+        </form>
+      </div>
+    </div>
+  `
+};
+
+const PrincipalReview = {
+  data() {
+    return {
+      applications: [],
+      finances: [],
+      departments: [],
+      errorMessage: '',
+      successMessage: '',
+      scholarshipAmount: 50000 // Scholarship amount per student
+    };
+  },
+  computed: {
+    isPrincipal() {
+      return this.$store.getters.role === 'principal';
+    },
+    categorizedApplications() {
+      return {
+        recommended: this.applications.filter(app => app.recommend === true),
+        notRecommended: this.applications.filter(app => app.recommend === false),
+        notReviewed: this.applications.filter(app => app.recommend === null)
+      };
+    }
+  },
+  methods: {
+    async fetchApplications() {
+      try {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/applications');
+        if (!response.ok) {
+          throw new Error('Failed to fetch applications');
+        }
+        this.applications = await response.json();
+      } catch (error) {
+        this.errorMessage = 'Error fetching applications: ' + error.message;
+      }
+    },
+    async fetchFinances() {
+      try {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/finances');
+        if (!response.ok) {
+          throw new Error('Failed to fetch finances');
+        }
+        this.finances = await response.json();
+      } catch (error) {
+        this.errorMessage = 'Error fetching finances: ' + error.message;
+      }
+    },
+    async fetchDepartments() {
+      try {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/departments');
+        if (!response.ok) {
+          throw new Error('Failed to fetch departments');
+        }
+        this.departments = await response.json();
+      } catch (error) {
+        this.errorMessage = 'Error fetching departments: ' + error.message;
+      }
+    },
+    getDepartmentName(departmentId) {
+      const department = this.departments.find(d => d.id === departmentId);
+      return department ? department.name : 'Unknown';
+    },
+    getDepartmentBudget(departmentId) {
+      const finance = this.finances.find(f => f.department_id === departmentId);
+      return finance ? finance.budget : 0;
+    },
+    async updateApplicationStatus(application, newStatus) {
+      const departmentBudget = this.getDepartmentBudget(application.department_id);
+      
+      if (newStatus === 'accepted' && departmentBudget < this.scholarshipAmount) {
+        this.errorMessage = `Cannot accept application. Insufficient budget for ${this.getDepartmentName(application.department_id)}.`;
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://scholarship-management-production.up.railway.app/applications/${application.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: newStatus
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update application status');
+        }
+
+        if (newStatus === 'accepted') {
+          await this.updateDepartmentBudget(application.department_id, departmentBudget - this.scholarshipAmount);
+        }
+
+        this.successMessage = `Application ${application.id} ${newStatus}`;
+        await this.fetchApplications();
+        await this.fetchFinances();
+      } catch (error) {
+        this.errorMessage = 'Error updating application: ' + error.message;
+      }
+    },
+    async updateDepartmentBudget(departmentId, newBudget) {
+      try {
+        const response = await fetch(`https://scholarship-management-production.up.railway.app/finances/${departmentId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            budget: newBudget
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update department budget');
+        }
+      } catch (error) {
+        this.errorMessage = 'Error updating department budget: ' + error.message;
+      }
+    }
+  },
+  mounted() {
+    if (this.isPrincipal) {
+      this.fetchApplications();
+      this.fetchFinances();
+      this.fetchDepartments();
+    }
+  },
+  template: `
+    <div class="container mt-5">
+      <h2>Principal Review</h2>
+      
+      <div v-if="!isPrincipal" class="alert alert-warning">
+        You do not have permission to view this page.
+      </div>
+
+      <div v-else>
+        <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+        <div v-if="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+        <h3>Department Budgets</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th>Available Budget</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="finance in finances" :key="finance.id">
+              <td>{{ getDepartmentName(finance.department_id) }}</td>
+              <td>{{ finance.budget }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Applications</h3>
+        <p>Scholarship amount per student: {{ scholarshipAmount }}</p>
+
+        <div class="accordion" id="applicationsAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingRecommended">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRecommended" aria-expanded="true" aria-controls="collapseRecommended">
+                Recommended Applications ({{ categorizedApplications.recommended.length }})
+              </button>
+            </h2>
+            <div id="collapseRecommended" class="accordion-collapse collapse show" aria-labelledby="headingRecommended" data-bs-parent="#applicationsAccordion">
+              <div class="accordion-body">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Student ID</th>
+                      <th>Department</th>
+                      <th>Status</th>
+                      <th>HOD Feedback</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="app in categorizedApplications.recommended" :key="app.id">
+                      <td>{{ app.id }}</td>
+                      <td>{{ app.student_id }}</td>
+                      <td>{{ getDepartmentName(app.department_id) }}</td>
+                      <td>{{ app.status }}</td>
+                      <td>{{ app.feedback }}</td>
+                      <td>
+                        <button 
+                          @click="updateApplicationStatus(app, 'accepted')" 
+                          class="btn btn-sm btn-success"
+                          :disabled="app.status === 'accepted' || getDepartmentBudget(app.department_id) < scholarshipAmount"
+                        >
+                          Accept
+                        </button>
+                        <button 
+                          @click="updateApplicationStatus(app, 'rejected')" 
+                          class="btn btn-sm btn-danger"
+                          :disabled="app.status === 'rejected'"
+                        >
+                          Reject
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingNotRecommended">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNotRecommended" aria-expanded="false" aria-controls="collapseNotRecommended">
+                Not Recommended Applications ({{ categorizedApplications.notRecommended.length }})
+              </button>
+            </h2>
+            <div id="collapseNotRecommended" class="accordion-collapse collapse" aria-labelledby="headingNotRecommended" data-bs-parent="#applicationsAccordion">
+              <div class="accordion-body">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Student ID</th>
+                      <th>Department</th>
+                      <th>Status</th>
+                      <th>HOD Feedback</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="app in categorizedApplications.notRecommended" :key="app.id">
+                      <td>{{ app.id }}</td>
+                      <td>{{ app.student_id }}</td>
+                      <td>{{ getDepartmentName(app.department_id) }}</td>
+                      <td>{{ app.status }}</td>
+                      <td>{{ app.feedback }}</td>
+                      <td>
+                        <button 
+                          @click="updateApplicationStatus(app, 'accepted')" 
+                          class="btn btn-sm btn-success"
+                          :disabled="app.status === 'accepted' || getDepartmentBudget(app.department_id) < scholarshipAmount"
+                        >
+                          Accept
+                        </button>
+                        <button 
+                          @click="updateApplicationStatus(app, 'rejected')" 
+                          class="btn btn-sm btn-danger"
+                          :disabled="app.status === 'rejected'"
+                        >
+                          Reject
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingNotReviewed">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNotReviewed" aria-expanded="false" aria-controls="collapseNotReviewed">
+                Not Yet Reviewed Applications ({{ categorizedApplications.notReviewed.length }})
+              </button>
+            </h2>
+            <div id="collapseNotReviewed" class="accordion-collapse collapse" aria-labelledby="headingNotReviewed" data-bs-parent="#applicationsAccordion">
+              <div class="accordion-body">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Student ID</th>
+                      <th>Department</th>
+                      <th>Status</th>
+                      <th>HOD Feedback</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="app in categorizedApplications.notReviewed" :key="app.id">
+                      <td>{{ app.id }}</td>
+                      <td>{{ app.student_id }}</td>
+                      <td>{{ getDepartmentName(app.department_id) }}</td>
+                      <td>{{ app.status }}</td>
+                      <td>{{ app.feedback }}</td>
+                      <td>
+                        <button 
+                          @click="updateApplicationStatus(app, 'accepted')" 
+                          class="btn btn-sm btn-success"
+                          :disabled="app.status === 'accepted' || getDepartmentBudget(app.department_id) < scholarshipAmount"
+                        >
+                          Accept
+                        </button>
+                        <button 
+                          @click="updateApplicationStatus(app, 'rejected')" 
+                          class="btn btn-sm btn-danger"
+                          :disabled="app.status === 'rejected'"
+                        >
+                          Reject
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+};
 const AdminAuthPage ={
   data(){
       return {
@@ -370,7 +921,7 @@ const AdminAuthPage ={
   {
       async login() {
         try {
-          const response = await fetch('http://127.0.0.1:5000/login', {
+          const response = await fetch('https://scholarship-management-production.up.railway.app/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -475,7 +1026,7 @@ const ScholarshipApplicationForm = {
       if (this.sop) formData.append('sop', this.sop);
 
       try {
-        const response = await fetch('http://localhost:5000/api/scholarship/apply', {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/api/scholarship/apply', {
           method: 'POST',
           body: formData,
         });
@@ -546,7 +1097,7 @@ const RegisterPage = {
     async register() {
       console.log('Role:', this.role); // Add this line for debugging
       try {
-        const response = await fetch('http://127.0.0.1:5000/register', {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -607,6 +1158,9 @@ const RegisterPage = {
               <select id="role" v-model="role" class="form-control">
                 <option value="student">Student</option>
                 <option value="hod">HOD</option>
+                <option value="finance">Finance</option>
+                <option value="principal">Principal</option>
+
               </select>
             </div>
             <div class="form-group">
@@ -646,7 +1200,7 @@ const AuthPage ={
     {
         async login() {
           try {
-            const response = await fetch('http://127.0.0.1:5000/login', {
+            const response = await fetch('https://scholarship-management-production.up.railway.app/login', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -894,6 +1448,8 @@ const routes = [
     { path: '/hodreview', component: HODReview },
     { path: '/admin_home', component: AdminHome },
     { path: '/admin_login', component: AdminAuthPage },
+    { path: '/finance', component: FinanceManagement },
+    { path: '/principalreview', component: PrincipalReview },
 
     
 
