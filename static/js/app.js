@@ -257,7 +257,7 @@ const HODReview = {
     if (this.userRole === 'hod') {
       try {
         // Fetch applications for the HOD's department
-        const response = await fetch(`http://localhost:5000/applications?department_id=${this.departmentId}`);
+        const response = await fetch(`https://scholarship-management-production.up.railway.app/applications?department_id=${this.departmentId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch applications');
         }
