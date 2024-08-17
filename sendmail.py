@@ -3,12 +3,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 # Email configuration
-smtp_server = 'smtp.example.com'
+smtp_server = 'smtp.gmail.com'
 smtp_port = 587  # Use 465 for SSL, 587 for TLS
-smtp_user = 'your_email@example.com'
-smtp_password = 'your_password'
-from_email = 'your_email@example.com'
-to_email = 'recipient@example.com'
+smtp_user = 'email.abhaynarayanbairagi@gmail.com'
+smtp_password = 'yooi eeji ybej wneu'
+from_email = 'email.abhaynarayanbairagi@gmail.com'
+to_email = 'abhaybairagi92@gmail.com'
 
 # Create message container
 msg = MIMEMultipart()

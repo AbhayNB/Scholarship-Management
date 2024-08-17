@@ -995,6 +995,118 @@ const AdminAuthPage ={
 </div>
   `
 };
+const AdminRegisterPage = {
+
+  data() {
+    return {
+      username: '',
+      password: '',
+      role: 'student', // Default role
+      departmentId: '', // To store selected department ID
+      errorMessage: '',
+      successMessage: ''
+    };
+  },
+  computed:{
+    departments(){
+      return this.$store.getters.departments;
+    }
+  },
+  methods: {
+    async register() {
+      console.log('Role:', this.role); // Add this line for debugging
+      try {
+        const response = await fetch('https://scholarship-management-production.up.railway.app/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: this.username,
+            password: this.password,
+            role: this.role,
+            department_id: this.departmentId
+          })
+        });
+  
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'An unexpected error occurred');
+        }
+  
+        this.successMessage = 'Registration successful! You can now log in.';
+        this.username = '';
+        this.password = '';
+        this.role = 'student';
+        this.departmentId = '';
+        this.errorMessage = '';
+        this.$router.push('/login');
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    }
+  },  
+  template: `
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <h2 class="text-center">Register</h2>
+          <form @submit.prevent="register">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                v-model="username"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                v-model="password"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="role">Role</label>
+              <select id="role" v-model="role" class="form-control">
+                <option value="student">Student</option>
+                <option value="hod">HOD</option>
+                <option value="finance">Finance</option>
+                <option value="principal">Principal</option>
+
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="department">Department</label>
+              <select id="department" v-model="departmentId" class="form-control">
+                <option value="">Select a department (optional)</option>
+                <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <br>
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+            
+            <div v-if="errorMessage" class="alert alert-danger mt-3">
+              {{ errorMessage }}
+            </div>
+            <div v-if="successMessage" class="alert alert-success mt-3">
+              {{ successMessage }}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `
+};
+
 //-- other pages
 const ScholarshipApplicationForm = {
   computed: {
@@ -1157,10 +1269,6 @@ const RegisterPage = {
               <label for="role">Role</label>
               <select id="role" v-model="role" class="form-control">
                 <option value="student">Student</option>
-                <option value="hod">HOD</option>
-                <option value="finance">Finance</option>
-                <option value="principal">Principal</option>
-
               </select>
             </div>
             <div class="form-group">
@@ -1450,9 +1558,10 @@ const routes = [
     { path: '/admin_login', component: AdminAuthPage },
     { path: '/finance', component: FinanceManagement },
     { path: '/principalreview', component: PrincipalReview },
+    { path: '/admin_register', component: AdminRegisterPage },
 
     
-
+    
     
 
   ];

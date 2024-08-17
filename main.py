@@ -11,6 +11,16 @@ from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
 import datetime
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+# Email configuration
+smtp_server = 'smtp.gmail.com'
+smtp_port = 587  # Use 465 for SSL, 587 for TLS
+smtp_user = 'email.abhaynarayanbairagi@gmail.com'
+smtp_password = 'yooi eeji ybej wneu'
+from_email = 'email.abhaynarayanbairagi@gmail.com'
+to_email = 'abhaybairagi92@gmail.com'
 
 
 #====== configure
@@ -213,7 +223,30 @@ def apply_scholarship():
         
         db.session.add(application)
         db.session.commit()
-        
+        # Create message container
+        user = User.query.get(student_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        msg = MIMEMultipart()
+        msg['From'] = from_email
+        msg['To'] = user.email
+        msg['Subject'] = 'Scholarship Application Confirmation'
+
+        body = f"Dear {user.username},\n\nYour scholarship application has been received successfully. We will review it and get back to you shortly.\n\nThank you!"
+        msg.attach(MIMEText(body, 'plain'))
+
+        # Send email
+        try:
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()  # Secure the connection
+                server.login(smtp_user, smtp_password)
+                server.sendmail(from_email, user.email, msg.as_string())
+                print('Confirmation email sent successfully!')
+        except Exception as e:
+            print(f'Failed to send email: {e}')
+        finally:
+            server.quit()
         return jsonify({"message": "Application submitted successfully!", "application_id": application.id}), 201
 
     except Exception as e:
@@ -406,7 +439,7 @@ def delete_department(department_id):
     db.session.commit()
     return jsonify({'message': 'Department deleted'})
 
-# Routes for Finance
+# =======  for Finance
 @app.route('/finances', methods=['POST'])
 def create_finance():
     data = request.get_json()

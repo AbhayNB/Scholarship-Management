@@ -15,6 +15,7 @@ user_roles = db.Table('user_roles',
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    email=db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
     roles = relationship('Role', secondary=user_roles, backref=db.backref('users', lazy=True))
     department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=True)
