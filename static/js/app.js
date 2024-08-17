@@ -274,7 +274,7 @@ const HODReview = {
     async updateApplication(application) {
       try {
         console.log('Appn:'+application.recommend)
-        const response = await fetch(`http://localhost:5000/applications/${application.id}`, {
+        const response = await fetch(`https://scholarship-management-production.up.railway.app/applications/${application.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
